@@ -1,0 +1,15 @@
+{
+  "bindings": [
+    {
+      "match": {
+        "channel": "opencl0w-weixin"
+      },
+      "agentId": "comms"
+    }
+  ],
+  "channels": {
+    "openclaw-weixin": {
+      "defaultAgent": "comms"
+    }
+  }
+}
