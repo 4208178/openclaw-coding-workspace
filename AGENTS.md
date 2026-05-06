@@ -459,3 +459,20 @@ This is a starting point. Add your own conventions, style, and rules as you figu
 
 - [Default AGENTS.md](/reference/AGENTS.default)
 - [Technical leadership](/concepts/technical-leadership)
+
+### 📚 本地知识库优先策略 (Offline Evolution)
+**背景**：外部网络可能不稳定，CTO 需具备离线进化能力。
+**策略**：
+1. **优先检索**：在进行技术决策前，**首先**扫描 `docs/knowledge-base/` 目录。
+2. **手动注入**：CEO/CIO 可通过复制技术文档到 `docs/knowledge-base/` 手动注入知识。
+3. **自动学习**：CTO 启动时自动扫描知识库，更新内部知识图谱。
+4. **反馈闭环**：将新学到的知识（如新发现的 Bug 修复方案）写回知识库。
+**目录结构**：
+- `tech-stack/`: 技术栈文档（框架、语言、工具）
+- `best-practices/`: 最佳实践、设计模式、代码规范
+- `architecture/`: 架构模式、ADR 历史、决策记录
+- `tutorials/`: 教程、案例研究
+- `external/`: 从外部导入的文档（PDF、Markdown 等）
+**执行原则**：
+- 网络可用时：优先检索本地知识库，再尝试外网搜索（作为补充）。
+- 网络不可用时：完全依赖本地知识库，确保决策质量不下降。
