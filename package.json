@@ -16,7 +16,12 @@
     "type": "git",
     "url": "git+https://github.com/4208178/openclaw-coding-workspace.git"
   },
-  "keywords": ["openclaw", "cto", "architecture", "adr"],
+  "keywords": [
+    "openclaw",
+    "cto",
+    "architecture",
+    "adr"
+  ],
   "author": "蜜蜂 CTO",
   "license": "MIT",
   "bugs": {
@@ -26,19 +31,20 @@
   "dependencies": {
     "@fastify/autoload": "^5.0.0",
     "@fastify/cors": "^10.0.0",
+    "@types/node": "^22.0.0",
     "fastify": "^5.0.0",
-    "typescript": "^5.0.0",
     "ts-node": "^10.9.0",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
-    "jest": "^29.0.0",
-    "supertest": "^7.0.0",
-    "ts-jest": "^29.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
-    "prettier": "^3.0.0"
+    "jest": "^29.0.0",
+    "nodemailer": "^8.0.7",
+    "prettier": "^3.0.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.0.0"
   }
 }

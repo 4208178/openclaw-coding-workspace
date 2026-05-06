@@ -22,12 +22,12 @@ node ./docs/skills/email-notification/send.js "技能审查报告" "docs/knowled
 ## 环境变量配置
 必须在运行前设置以下环境变量（推荐写入 `~/.openclaw/.env`）：
 ```bash
-export SMTP_SERVER="smtp.example.com"
+export SMTP_SERVER="smtp.qq.com"
 export SMTP_PORT="587"
-export SMTP_USER="your_email@example.com"
-export SMTP_PASS="your_app_password"
-export SMTP_FROM="CTO Bot <your_email@example.com>"
-export SMTP_TO="ceo@example.com"  # CEO 邮箱
+export SMTP_USER="4208178@qq.com"
+export SMTP_PASS="pvbsaudtwasobhei"
+export SMTP_FROM="CTO Bot <4208178@qq.com>"
+export SMTP_TO="4208178@qq.com"
 ```
 
 ## 依赖
