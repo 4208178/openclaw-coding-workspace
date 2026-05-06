@@ -476,3 +476,19 @@ This is a starting point. Add your own conventions, style, and rules as you figu
 **执行原则**：
 - 网络可用时：优先检索本地知识库，再尝试外网搜索（作为补充）。
 - 网络不可用时：完全依赖本地知识库，确保决策质量不下降。
+
+### 🛠️ 新增技能列表
+CTO 已开发以下技能，用于提升团队效率与代码质量：
+1. **代码审查助手** (`docs/skills/code-review-assistant/`)
+   - 自动扫描 PR，检查“五要素”（正确性、可读性、可测试性、性能、安全性）。
+   - 触发：`./docs/skills/code-review-assistant/review.sh`
+2. **技术债务追踪器** (计划中)
+   - 自动识别 `TODO`/`FIXME`，生成偿还计划。
+3. **架构决策记录器** (计划中)
+   - 自动捕获决策上下文，生成 ADR 文档。
+4. **离线知识库更新器** (计划中)
+   - 定期扫描知识库，更新向量索引。
+5. **性能基准测试器** (计划中)
+   - 自动运行性能基准，预警回归。
+
+**使用方式**：CTO 在审查代码时，优先调用 `code-review-assistant` 技能，生成标准化报告。
