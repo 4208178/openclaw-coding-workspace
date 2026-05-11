@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>晨间速递 ☀️</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#f59e0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="晨间速递">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; min-height: 100vh; }
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    .header { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 24px; color: #1e293b; }
+    .header .date { color: #64748b; font-size: 14px; }
+    .refresh-btn { background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .refresh-btn:hover { background: #d97706; }
+    
+    /* Cards */
+    .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card h2 { font-size: 18px; color: #334155; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    
+    /* Weather */
+    .weather-row { display: flex; align-items: center; gap: 20px; margin-bottom: 16px; }
+    .temp { font-size: 48px; font-weight: 300; color: #1e293b; }
+    .weather-info p { color: #64748b; }
+    .weather-details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+    .weather-details div { text-align: center; }
+    .weather-details .label { font-size: 12px; color: #94a3b8; }
+    .weather-details .value { font-size: 14px; color: #475569; }
+    
+    /* Market */
+    .market-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .market-item .name { width: 90px; font-size: 14px; color: #475569; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .market-item .bar { flex: 1; height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; }
+    .market-item .bar-fill { height: 100%; border-radius: 4px; }
+    .market-item .change { width: 60px; text-align: right; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+    
+    .positive { color: #dc2626 !important; }  /* 红色 - 上涨 */
+    .negative { color: #16a34a !important; }  /* 绿色 - 下跌 */
+    .neutral { color: #6b7280 !important; }   /* 灰色 - 持平 */
+    
+    /* News */
+    .news-item { padding: 10px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 6px; display: flex; align-items: flex-start; gap: 8px; }
+    .news-item a { color: #1e293b; text-decoration: none; font-size: 14px; flex: 1; }
+    .news-item a:hover { color: #2563eb; }
+    .news-source { display: inline-block; padding: 1px 5px; border-radius: 2px; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+    .news-topic { display: inline-block; padding: 2px 6px; background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%); color: white; border-radius: 8px; font-size: 11px; margin: 2px; }
+    
+    /* Source tag colors - 更多颜色 */
+    .source-sspai { background: #f97316; color: white; }  /* 橙色 */
+    .source-douyin { background: #8b5cf6; color: white; }  /* 紫色 */
+    .source-hacker { background: #f59e0b; color: white; }  /* 琥珀色 */
+    .source-default { background: #e2e8f0; color: #64748b; }
+    
+    /* Fun */
+    .fun-item { padding: 8px 12px; background: #f8fafc; border-radius: 6px; font-size: 14px; color: #475569; margin-bottom: 8px; }
+    .fun-item:last-child { margin-bottom: 0; }
+    
+    /* States */
+    .loading { text-align: center; padding: 40px; color: #64748b; }
+    .error { text-align: center; padding: 40px; color: #ef4444; }
+    .empty { text-align: center; padding: 40px; color: #94a3b8; }
+    
+    /* Grid */
+    @media (min-width: 768px) {
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div>
+        <h1>☀️ 晨间速递</h1>
+        <p class="date" id="date"></p>
+      </div>
+      <button class="refresh-btn" onclick="loadData()">🔄 刷新</button>
+    </header>
+    
+    <div id="content">
+      <p class="loading">加载中...</p>
+    </div>
+  </div>
+
+  <script>
+    function formatDate() {
+      const d = new Date();
+      return d.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    
+    document.getElementById('date').textContent = formatDate();
+    
+    // Market name to emoji mapping
+    const marketEmoji = {
+      'A50': '🇨🇳',
+      '恒生': '🇭🇰',
+      '纳指': '🇺🇸',
+      '道指': '🇺🇸',
+      'USD/CNY': '💵'
+    };
+    
+    // Source to color mapping
+    const sourceColors = {
+      '少数派': 'source-sspai',
+      '抖音热榜': 'source-douyin',
+      '抖音热榜 (实时)': 'source-douyin',
+      'Hacker News': 'source-hacker'
+    };
+    
+    function getWeatherData(data) {
+      const w = data?.modules?.weather?._data?.weather || {};
+      return {
+        temp: w.temp || '--',
+        condition: w.weather || '晴',
+        location: w.location || '北京',
+        aqi: data?.modules?.weather?._data?.aqi?.aqi || '--',
+        humidity: w.humidity || '--',
+        wind: w.wind || '--'
+      };
+    }
+    
+    function getMarketData(data) {
+      const items = [];
+      const p = data?.modules?.premarket;
+      if (!p) return items;
+      
+      (p.items || []).forEach(item => {
+        const text = item.text || '';
+        
+        if (text.includes('A50')) {
+          const m = text.match(/([+-]?[\d.]+)%/);
+          if (m) items.push({ name: '富时A50', change: parseFloat(m[1]) });
+        }
+        if (text.includes('港股') || text.includes('恒生')) {
+          const m = text.match(/([+-]?[\d.]+)%/g);
+          if (m) items.push({ name: '恒生指数', change: parseFloat(m[m.length-1]) });
+        }
+        if (text.includes('纳斯达克')) {
+          const m = text.match(/([+-]?[\d.]+)%/);
+          if (m) items.push({ name: '纳斯达克', change: parseFloat(m[1]) });
+        }
+        if (text.includes('道琼斯')) {
+          const m = text.match(/([+-]?[\d.]+)%/);
+          if (m) items.push({ name: '道琼斯', change: parseFloat(m[1]) });
+        }
+        if (text.includes('上证')) {
+          const m = text.match(/([+-]?[\d.]+)%/);
+          if (m) items.push({ name: '上证指数', change: parseFloat(m[1]) });
+        }
+        if (text.includes('深证')) {
+          const m = text.match(/([+-]?[\d.]+)%/);
+          if (m) items.push({ name: '深证成指', change: parseFloat(m[1]) });
+        }
+      });
+      
+      // USD/CNY
+      if (p.forex) {
+        const m = p.forex.match(/([+-]?[\d.]+)%/);
+        if (m) items.push({ name: '美元/人民币', change: parseFloat(m[1]) });
+      }
+      
+      return items.slice(0, 6);
+    }
+    
+    function getNewsData(data) {
+      const items = [];
+      const newsSources = data?.modules?.news?.items || [];
+      
+      newsSources.forEach(news => {
+        const text = news.text || '';
+        const source = news.source || '新闻';
+        
+        // 格式1: 有链接的新闻 "序号. 标题 🔗 URL"
+        if (text.includes('🔗')) {
+          const lines = text.split('\n');
+          let currentTitle = '';
+          let currentUrl = '';
+          
+          lines.forEach(line => {
+            const urlMatch = line.match(/🔗\s*(https?:\/\/[^\s]+)/);
+            if (urlMatch) currentUrl = urlMatch[1];
+            
+            const titleMatch = line.match(/^\s*(\d+)\.\s*([^🔗]+)/);
+            if (titleMatch) currentTitle = titleMatch[2].trim();
+            
+            if (currentTitle && currentUrl) {
+              items.push({ title: currentTitle, url: currentUrl, source: source });
+              currentTitle = '';
+              currentUrl = '';
+            }
+          });
+        }
+        // 格式2: 抖音热榜 "1. #话题# | 2. #话题#"
+        else if (text.includes('#')) {
+          const topics = text.match(/#([^#]+)#/g);
+          if (topics) {
+            topics.forEach(topic => {
+              const cleanTopic = topic.replace(/#/g, '');
+              items.push({ 
+                title: '#' + cleanTopic + '#', 
+                url: null, 
+                source: source,
+                isTopic: true  // 标记为话题
+              });
+            });
+          }
+        }
+      });
+      
+      return items;
+    }
+    
+    function render(data) {
+      const weather = getWeatherData(data);
+      const market = getMarketData(data);
+      const news = getNewsData(data);
+      const fun = data?.modules?.fun?.items || [];
+      
+      let html = '';
+      
+      // Weather + Market (desktop 2 columns)
+      html += '<div class="grid-2">';
+      
+      // Weather
+      html += '<div class="card">';
+      html += '<h2>🌤️ 今日天气</h2>';
+      html += '<div class="weather-row">';
+      html += `<div class="temp">${weather.temp}°</div>`;
+      html += '<div class="weather-info">';
+      html += `<p>${weather.condition}</p>`;
+      html += `<p class="date">${weather.location}</p>`;
+      html += '</div></div>';
+      html += '<div class="weather-details">';
+      html += `<div><div class="label">AQI</div><div class="value">${weather.aqi}</div></div>`;
+      html += `<div><div class="label">湿度</div><div class="value">${weather.humidity}%</div></div>`;
+      html += `<div><div class="label">风速</div><div class="value">${weather.wind}km/h</div></div>`;
+      html += '</div></div>';
+      
+      // Market - 改进版
+      html += '<div class="card">';
+      html += '<h2>📈 昨夜市场</h2>';
+      if (market.length > 0) {
+        market.forEach(m => {
+          // 颜色：中国习惯：正=红(涨)，负=绿(跌)，零=灰
+          let colorClass, color;
+          if (m.change > 0) { colorClass = 'positive'; color = '#dc2626'; }  // 涨=红
+          else if (m.change < 0) { colorClass = 'negative'; color = '#16a34a'; }  // 跌=绿
+          else { colorClass = 'neutral'; color = '#6b7280'; }
+          
+          // 涨跌幅条宽度（放大显示）
+          const width = Math.min(Math.abs(m.change) * 8 + 10, 100);
+          
+          // Emoji
+          const emoji = marketEmoji[m.name] || '';
+          
+          html += '<div class="market-item">';
+          html += `<span class="name">${emoji} ${m.name}</span>`;
+          html += `<div class="bar"><div class="bar-fill" style="width:${width}%;background:${color}"></div></div>`;
+          html += `<span class="change ${colorClass}">${m.change > 0 ? '+' : ''}${m.change.toFixed(2)}%</span>`;
+          html += '</div>';
+        });
+      } else {
+        html += '<p class="empty">暂无市场数据</p>';
+      }
+      html += '</div></div>';
+      
+      // News - 改进版
+      html += '<div class="card">';
+      html += '<h2>📰 今日要闻</h2>';
+      if (news.length > 0) {
+        // 先渲染有链接的新闻
+        const linkedNews = news.filter(n => n.url);
+        const topics = news.filter(n => n.isTopic);
+        
+        // 有链接的新闻
+        linkedNews.forEach(n => {
+          const sourceClass = sourceColors[n.source] || 'source-default';
+          html += '<div class="news-item">';
+          html += `<span class="news-source ${sourceClass}">${n.source}</span>`;
+          html += `<a href="${n.url}" target="_blank">${n.title} ↗</a>`;
+          html += '</div>';
+        });
+        
+        // 抖音热榜话题（单独一行显示）
+        if (topics.length > 0) {
+          html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0">';
+          html += '<span class="news-source source-douyin">抖音热榜</span>';
+          topics.forEach(t => {
+            html += `<span class="news-topic">#${t.title.replace(/#/g, '')}#</span>`;
+          });
+          html += '</div>';
+        }
+      } else {
+        html += '<p class="empty">暂无新闻</p>';
+      }
+      html += '</div>';
+      
+      // Fun
+      html += '<div class="card">';
+      html += '<h2>💡 今日老黄历</h2>';
+      fun.forEach(f => {
+        html += `<div class="fun-item">${f.text}</div>`;
+      });
+      html += '</div>';
+      
+      document.getElementById('content').innerHTML = html;
+    }
+    
+    async function loadData() {
+      document.getElementById('content').innerHTML = '<p class="loading">加载中...</p>';
+      
+      try {
+        const res = await fetch('/api/report/latest');
+        if (!res.ok) throw new Error('网络请求失败');
+        
+        const d = await res.json();
+        const data = d.data || d;
+        
+        if (!data.modules) {
+          throw new Error('数据格式错误');
+        }
+        
+        render(data);
+      } catch(e) {
+        document.getElementById('content').innerHTML = `<p class="error">加载失败: ${e.message}</p>`;
+      }
+    }
+    
+    loadData();
+    
+    // 注册 Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((reg) => console.log('SW 注册成功:', reg.scope))
+          .catch((err) => console.log('SW 注册失败:', err));
+      });
+    }
+  </script>
+</body>
+</html>

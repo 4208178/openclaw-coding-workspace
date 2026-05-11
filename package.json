@@ -32,7 +32,9 @@
     "@fastify/autoload": "^5.0.0",
     "@fastify/cors": "^10.0.0",
     "@types/node": "^22.0.0",
+    "axios": "^1.16.0",
     "fastify": "^5.0.0",
+    "node-cron": "^4.2.1",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
   },

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>晨间速递 - 管理后台</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    [v-cloak] { display: none; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1f2937; }
+    ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-gray-900 min-h-screen">
+  <div id="app" v-cloak class="flex">
+    <!-- Left Sidebar -->
+    <aside class="w-56 bg-gray-800/80 border-r border-gray-700 fixed h-full flex flex-col">
+      <!-- Logo -->
+      <div class="p-4 border-b border-gray-700">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-sun text-2xl text-yellow-400"></i>
+          <div>
+            <h1 class="text-white font-bold">晨间速递</h1>
+            <p class="text-xs text-gray-500">管理后台</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Navigation -->
+      <nav class="flex-1 p-3 space-y-1">
+        <a 
+          v-for="item in navItems" 
+          :key="item.id"
+          @click="currentView = item.id"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
+          :class="currentView === item.id ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'"
+        >
+          <i :class="item.icon"></i>
+          <span>{{ item.label }}</span>
+        </a>
+      </nav>
+      
+      <!-- Connection Status -->
+      <div class="p-4 border-t border-gray-700">
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-500">连接状态</span>
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full" :class="wsConnected ? 'bg-green-400' : 'bg-red-400'"></span>
+            <span :class="wsConnected ? 'text-green-400' : 'text-red-400'">{{ wsConnected ? '已连接' : '未连接' }}</span>
+          </span>
+        </div>
+        <p class="text-xs text-gray-600 mt-2">v2.0.0</p>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-56">
+      <!-- Header -->
+      <header class="bg-gray-800/50 border-b border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <h2 class="text-lg font-semibold text-white">
+          {{ navItems.find(n => n.id === currentView)?.label }}
+        </h2>
+        
+        <button 
+          @click="regenerate" 
+          :disabled="isGenerating"
+          class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white rounded-lg font-medium transition-all flex items-center gap-2"
+        >
+          <i class="fas" :class="isGenerating ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+          {{ isGenerating ? '生成中...' : '重新生成' }}
+        </button>
+      </header>
+
+      <!-- Content Area -->
+      <div class="p-6">
+        <!-- Dashboard View -->
+        <div v-show="currentView === 'dashboard'">
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-400 text-sm">总晨报数</p>
+                  <p class="text-3xl font-bold text-white mt-1">{{ stats.totalReports }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-newspaper text-blue-400 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-400 text-sm">最近日期</p>
+                  <p class="text-2xl font-bold text-white mt-1">{{ stats.lastDate || '-' }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-calendar text-green-400 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-400 text-sm">最近任务</p>
+                  <p class="text-2xl font-bold mt-1" :class="stats.lastStatus === 'success' ? 'text-green-400' : 'text-red-400'">
+                    {{ stats.lastStatus === 'success' ? '✓ 成功' : stats.lastStatus === 'failed' ? '✗ 失败' : '-' }}
+                  </p>
+                </div>
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center" :class="stats.lastStatus === 'success' ? 'bg-green-500/20' : 'bg-red-500/20'">
+                  <i class="text-xl" :class="stats.lastStatus === 'success' ? 'fas fa-check-circle text-green-400' : 'fas fa-times-circle text-red-400'"></i>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-400 text-sm">最近耗时</p>
+                  <p class="text-2xl font-bold text-white mt-1">{{ stats.lastDuration ? stats.lastDuration + 'ms' : '-' }}</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-clock text-purple-400 text-xl"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History View -->
+        <div v-show="currentView === 'history'" class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-700 flex items-center justify-between">
+            <h3 class="text-white font-semibold">历史晨报列表</h3>
+            <span class="text-sm text-gray-500">{{ history.length }} 条</span>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-700/50">
+                <tr>
+                  <th class="px-5 py-3 text-left text-sm font-medium text-gray-400">日期</th>
+                  <th class="px-5 py-3 text-left text-sm font-medium text-gray-400">版本</th>
+                  <th class="px-5 py-3 text-left text-sm font-medium text-gray-400">状态</th>
+                  <th class="px-5 py-3 text-left text-sm font-medium text-gray-400">创建时间</th>
+                  <th class="px-5 py-3 text-right text-sm font-medium text-gray-400">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-700">
+                <tr v-if="history.length === 0">
+                  <td colspan="5" class="px-5 py-8 text-center text-gray-500">暂无数据</td>
+                </tr>
+                <tr v-for="item in history" :key="item.date" class="hover:bg-gray-700/30">
+                  <td class="px-5 py-4 text-white font-medium">{{ item.date }}</td>
+                  <td class="px-5 py-4 text-gray-400">v{{ item.version }}</td>
+                  <td class="px-5 py-4">
+                    <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-sm">成功</span>
+                  </td>
+                  <td class="px-5 py-4 text-gray-400 text-sm">{{ item.created_at }}</td>
+                  <td class="px-5 py-4 text-right">
+                    <button @click="viewReport(item.date)" class="text-blue-400 hover:text-blue-300 mx-1" title="预览">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button @click="repushReport(item.date)" class="text-green-400 hover:text-green-300 mx-1" title="重推">
+                      <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button @click="deleteReport(item.date)" class="text-red-400 hover:text-red-300 mx-1" title="删除">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Logs View -->
+        <div v-show="currentView === 'logs'" class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-700 flex items-center justify-between">
+            <h3 class="text-white font-semibold">执行日志</h3>
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+                <input type="checkbox" v-model="autoScroll" class="rounded bg-gray-700 border-gray-600">
+                自动滚动
+              </label>
+              <button @click="clearLogs" class="text-sm px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded">
+                <i class="fas fa-trash-alt mr-1"></i>清空
+              </button>
+            </div>
+          </div>
+          
+          <div ref="logsContainer" class="h-[500px] overflow-y-auto p-4 font-mono text-sm">
+            <div v-if="logs.length === 0" class="text-center text-gray-500 py-8">
+              <i class="fas fa-inbox text-3xl mb-2"></i>
+              <p>暂无日志</p>
+            </div>
+            
+            <div v-for="(log, index) in logs" :key="index" class="py-2 border-b border-gray-700/30 flex items-start gap-3">
+              <span class="text-gray-500 text-xs whitespace-nowrap">{{ formatTime(log.created_at) }}</span>
+              <span class="text-lg">{{ getStatusIcon(log.status) }}</span>
+              <span class="text-gray-300 flex-1">{{ log.message }}</span>
+              <span v-if="log.duration != null" class="text-gray-500 text-xs whitespace-nowrap">
+                ({{ log.duration }}ms)
+              </span>
+              <span v-else class="text-gray-600 text-xs">(计算中...)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Preview Modal -->
+    <div v-if="previewModal.show" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50" @click.self="previewModal.show = false">
+      <div class="bg-gray-800 rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden border border-gray-700">
+        <div class="px-5 py-4 border-b border-gray-700 flex items-center justify-between">
+          <h3 class="text-white font-semibold">预览 - {{ previewModal.date }}</h3>
+          <button @click="previewModal.show = false" class="text-gray-400 hover:text-white">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-5 overflow-y-auto max-h-[60vh]">
+          <pre class="text-sm text-gray-300 whitespace-pre-wrap">{{ previewModal.content }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const currentView = ref('dashboard');
+        const wsConnected = ref(false);
+        const isGenerating = ref(false);
+        const autoScroll = ref(true);
+        const logsContainer = ref(null);
+        
+        const navItems = [
+          { id: 'dashboard', label: '仪表盘', icon: 'fas fa-th-large' },
+          { id: 'history', label: '历史晨报', icon: 'fas fa-history' },
+          { id: 'logs', label: '执行日志', icon: 'fas fa-list-alt' }
+        ];
+        
+        const stats = reactive({ totalReports: 0, lastDate: '', lastStatus: '', lastDuration: 0 });
+        const history = ref([]);
+        const logs = ref([]);
+        
+        const previewModal = reactive({ show: false, date: '', content: '' });
+        
+        let ws = null;
+
+        function formatTime(isoString) {
+          if (!isoString) return '';
+          return new Date(isoString).toLocaleTimeString('zh-CN', { hour12: false });
+        }
+
+        function getStatusIcon(status) {
+          return status === 'success' ? '🟢' : status === 'failed' ? '🔴' : '🟡';
+        }
+
+        function connectWs() {
+          ws = new WebSocket(`ws://${location.host}/ws`);
+          ws.onopen = () => { wsConnected.value = true; };
+          ws.onmessage = (e) => {
+            try {
+              addLog(JSON.parse(e.data));
+              if (['success', 'failed'].includes(JSON.parse(e.data).status)) {
+                setTimeout(() => { loadStats(); loadHistory(); }, 500);
+              }
+            } catch(err) {}
+          };
+          ws.onclose = () => { wsConnected.value = false; setTimeout(connectWs, 3000); };
+        }
+
+        function addLog(log) {
+          logs.value.push(log);
+          if (logs.value.length > 200) logs.value = logs.value.slice(-200);
+          if (autoScroll.value) {
+            nextTick(() => { if (logsContainer.value) logsContainer.value.scrollTop = logsContainer.value.scrollHeight; });
+          }
+        }
+
+        function clearLogs() { logs.value = []; }
+
+        async function loadStats() {
+          try {
+            const [reportRes, logRes] = await Promise.all([
+              fetch('/api/report/history?limit=1000'),
+              fetch('/api/logs?limit=1')
+            ]);
+            const reportData = await reportRes.json();
+            const logData = await logRes.json();
+            stats.totalReports = reportData.list?.length || 0;
+            if (reportData.list?.length) stats.lastDate = reportData.list[0].date;
+            if (logData.logs?.length) {
+              stats.lastStatus = logData.logs[0].status;
+              stats.lastDuration = logData.logs[0].duration_ms;
+            }
+          } catch(e) { console.error(e); }
+        }
+
+        async function loadHistory() {
+          try {
+            const res = await fetch('/api/report/history');
+            history.value = (await res.json()).list || [];
+          } catch(e) { console.error(e); }
+        }
+
+        async function loadLogs() {
+          try {
+            const res = await fetch('/api/logs?limit=50');
+            logs.value = (await res.json()).logs || [];
+          } catch(e) { console.error(e); }
+        }
+
+        async function viewReport(date) {
+          try {
+            const res = await fetch(`/api/report/${date}`);
+            const data = await res.json();
+            previewModal.date = date;
+            previewModal.content = JSON.stringify(data.data || data, null, 2);
+            previewModal.show = true;
+          } catch(e) { alert('加载失败: ' + e.message); }
+        }
+
+        async function repushReport(date) {
+          alert(`重推 ${date} 功能开发中`);
+        }
+
+        async function deleteReport(date) {
+          if (!confirm(`确定删除 ${date} 的晨报?`)) return;
+          alert('删除功能开发中');
+        }
+
+        async function regenerate() {
+          isGenerating.value = true;
+          try {
+            await fetch('/api/admin/regenerate', { method: 'POST' });
+          } catch(e) {
+            addLog({ created_at: new Date().toISOString(), status: 'failed', message: e.message });
+          } finally {
+            isGenerating.value = false;
+          }
+        }
+
+        onMounted(() => {
+          loadStats();
+          loadHistory();
+          loadLogs();
+          connectWs();
+        });
+
+        return {
+          currentView, navItems, wsConnected, isGenerating, autoScroll, logsContainer,
+          stats, history, logs, previewModal,
+          formatTime, getStatusIcon, viewReport, repushReport, deleteReport, regenerate, clearLogs
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
